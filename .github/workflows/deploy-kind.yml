@@ -43,10 +43,7 @@ jobs:
           context: ./frontend
           file: ./frontend/Dockerfile
           push: false
-          tags: |
-            ditto-frontend:latest
-            ditto-frontend:${{ steps.timestamp.outputs.timestamp }}
-            ditto-frontend:${{ github.sha }}
+          tags: ditto-frontend:${{ steps.timestamp.outputs.timestamp }}
           load: true
           cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ditto-frontend:buildcache
 
@@ -56,10 +53,7 @@ jobs:
           context: ./api_service
           file: ./api_service/Dockerfile
           push: false
-          tags: |
-            ditto-api:latest
-            ditto-api:${{ steps.timestamp.outputs.timestamp }}
-            ditto-api:${{ github.sha }}
+          tags: ditto-api:${{ steps.timestamp.outputs.timestamp }}
           load: true
           cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ditto-api:buildcache
 

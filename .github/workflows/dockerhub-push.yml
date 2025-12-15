@@ -41,25 +41,13 @@ jobs:
           echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
           echo "🕐 Generated timestamp: $TIMESTAMP"
 
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.FRONTEND_IMAGE }}
-          tags: |
-            type=raw,value=latest
-            type=raw,value=${{ steps.timestamp.outputs.timestamp }}
-            type=raw,value=${{ github.sha }}
-            type=ref,event=branch
-
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
           file: ./frontend/Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ env.FRONTEND_IMAGE }}:${{ steps.timestamp.outputs.timestamp }}
           cache-from: type=registry,ref=${{ env.FRONTEND_IMAGE }}:buildcache
           cache-to: type=registry,ref=${{ env.FRONTEND_IMAGE }}:buildcache,mode=max
 
@@ -86,25 +74,13 @@ jobs:
           echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
           echo "🕐 Generated timestamp: $TIMESTAMP"
 
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.API_IMAGE }}
-          tags: |
-            type=raw,value=latest
-            type=raw,value=${{ steps.timestamp.outputs.timestamp }}
-            type=raw,value=${{ github.sha }}
-            type=ref,event=branch
-
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: ./api_service
           file: ./api_service/Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ env.API_IMAGE }}:${{ steps.timestamp.outputs.timestamp }}
           cache-from: type=registry,ref=${{ env.API_IMAGE }}:buildcache
           cache-to: type=registry,ref=${{ env.API_IMAGE }}:buildcache,mode=max
 
