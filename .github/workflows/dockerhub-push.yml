@@ -1,15 +1,8 @@
 name: Build and Push to Docker Hub
 
 on:
-  push:
-    branches:
-      - main
-      - master
-    paths:
-      - 'frontend/**'
-      - 'api_service/**'
-      - 'scrape_ditto.py'
-      - 'requirements_scraper.txt'
+  # Manual trigger only - ci-cd.yml handles automatic builds
+  # This workflow is for manual builds only (e.g., testing, rebuilds)
   workflow_dispatch:
 
 env:
@@ -46,10 +39,11 @@ jobs:
         with:
           context: ./frontend
           file: ./frontend/Dockerfile
+          platforms: linux/amd64
           push: true
           tags: ${{ env.FRONTEND_IMAGE }}:${{ steps.timestamp.outputs.timestamp }}
           cache-from: type=registry,ref=${{ env.FRONTEND_IMAGE }}:${{ steps.timestamp.outputs.timestamp }}
-          cache-to: type=registry,ref=${{ env.FRONTEND_IMAGE }}:${{ steps.timestamp.outputs.timestamp }},mode=max
+          cache-to: type=inline
 
   build-api:
     name: Build and Push API
@@ -79,8 +73,9 @@ jobs:
         with:
           context: ./api_service
           file: ./api_service/Dockerfile
+          platforms: linux/amd64
           push: true
           tags: ${{ env.API_IMAGE }}:${{ steps.timestamp.outputs.timestamp }}
           cache-from: type=registry,ref=${{ env.API_IMAGE }}:${{ steps.timestamp.outputs.timestamp }}
-          cache-to: type=registry,ref=${{ env.API_IMAGE }}:${{ steps.timestamp.outputs.timestamp }},mode=max
+          cache-to: type=inline
 

@@ -42,20 +42,24 @@ jobs:
         with:
           context: ./frontend
           file: ./frontend/Dockerfile
+          platforms: linux/amd64
           push: false
           tags: ditto-frontend:${{ steps.timestamp.outputs.timestamp }}
           load: true
           cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ditto-frontend:${{ steps.timestamp.outputs.timestamp }}
+          cache-to: type=inline
 
       - name: Build API image
         uses: docker/build-push-action@v5
         with:
           context: ./api_service
           file: ./api_service/Dockerfile
+          platforms: linux/amd64
           push: false
           tags: ditto-api:${{ steps.timestamp.outputs.timestamp }}
           load: true
           cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ditto-api:${{ steps.timestamp.outputs.timestamp }}
+          cache-to: type=inline
 
       - name: Set up Kind
         uses: engineerd/setup-kind@v0.6.0
