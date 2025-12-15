@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Ditto Insurance Analytics Dashboard</title>
+    <link rel="stylesheet" href="styles.css?v=1.0.0">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1>🏥 Ditto Insurance Analytics</h1>
+                    <p class="subtitle">Comprehensive Health Insurance Plan Ratings & Insights</p>
+                </div>
+                <div class="header-right">
+                    <span class="last-updated-header" id="lastUpdatedHeader">Last Updated: Loading...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Stats Cards -->
+        <section class="stats-section">
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-content">
+                    <h3 id="totalPlans">-</h3>
+                    <p>Total Plans</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🏢</div>
+                <div class="stat-content">
+                    <h3 id="totalCompanies">-</h3>
+                    <p>Insurance Companies</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⭐</div>
+                <div class="stat-content">
+                    <h3 id="avgRating">-</h3>
+                    <p>Average Rating</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">✅</div>
+                <div class="stat-content">
+                    <h3 id="ratedPlans">-</h3>
+                    <p>Plans with Ratings</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Charts Section -->
+        <section class="charts-section">
+            <div class="chart-container">
+                <div class="chart-card">
+                    <h2>Rating Distribution</h2>
+                    <canvas id="ratingChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h2>Top Companies by Average Rating</h2>
+                    <canvas id="companyRatingChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-container">
+                <div class="chart-card full-width">
+                    <h2>Plans per Company</h2>
+                    <canvas id="companyDistributionChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Top Plans Table -->
+        <section class="table-section">
+            <div class="table-card">
+                <h2>Top Rated Insurance Plans</h2>
+                <div class="table-wrapper">
+                    <table id="topPlansTable">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Company</th>
+                                <th>Policy Name</th>
+                                <th>Rating</th>
+                            </tr>
+                        </thead>
+                        <tbody id="topPlansBody">
+                            <tr><td colspan="4" class="loading">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Pagination Controls -->
+                <div class="pagination-container" id="topPlansPagination" style="display: none;">
+                    <div class="pagination-controls">
+                        <button id="topPlansPrev" class="pagination-btn" disabled>
+                            <span>←</span> Previous
+                        </button>
+                        <div class="pagination-info">
+                            <span id="topPlansPageInfo">Page 1 of 1</span>
+                        </div>
+                        <div class="pagination-per-page">
+                            <label for="topPlansPerPage">Records per page:</label>
+                            <select id="topPlansPerPage" class="pagination-select">
+                                <option value="10">10</option>
+                                <option value="20">20</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
+                        <button id="topPlansNext" class="pagination-btn" disabled>
+                            Next <span>→</span>
+                        </button>
+                    </div>
+                    <div class="pagination-pages" id="topPlansPageNumbers">
+                        <!-- Page numbers will be generated here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Data Table -->
+        <section class="table-section">
+            <div class="table-card">
+                <h2>All Insurance Plans</h2>
+                <div class="table-controls">
+                    <input type="text" id="searchInput" placeholder="Search plans..." class="search-input">
+                    <div class="table-info">
+                        Showing <span id="showingCount">0</span> of <span id="totalCount">0</span> plans
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <table id="dataTable">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Plan No</th>
+                                <th>Company</th>
+                                <th>Policy Name</th>
+                                <th>Rating By Ditto</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataTableBody">
+                            <tr><td colspan="5" class="loading">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Pagination Controls -->
+                <div class="pagination-container" id="dataTablePagination" style="display: none;">
+                    <div class="pagination-controls">
+                        <button id="dataTablePrev" class="pagination-btn" disabled>
+                            <span>←</span> Previous
+                        </button>
+                        <div class="pagination-info">
+                            <span id="dataTablePageInfo">Page 1 of 1</span>
+                        </div>
+                        <div class="pagination-per-page">
+                            <label for="dataTablePerPage">Records per page:</label>
+                            <select id="dataTablePerPage" class="pagination-select">
+                                <option value="10" selected>10</option>
+                                <option value="20">20</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
+                        <button id="dataTableNext" class="pagination-btn" disabled>
+                            Next <span>→</span>
+                        </button>
+                    </div>
+                    <div class="pagination-pages" id="dataTablePageNumbers">
+                        <!-- Page numbers will be generated here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p class="copyright">&copy; 2025 Ditto Insurance Analytics. All rights reserved.</p>
+            <p class="made-with-love">Made with ❤️ on Ditto using <a href="https://cursor.com" target="_blank" rel="noopener noreferrer" class="cursor-logo">Cursor</a></p>
+        </div>
+    </footer>
+
+    <script src="app.js?v=1.0.0"></script>
+</body>
+</html>
+

@@ -1,0 +1,332 @@
+# ============================================
+# Ditto Insurance Analytics - .gitignore
+# ============================================
+
+# ============================================
+# Python
+# ============================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+venv_scraper/
+venv_*/
+*.venv
+
+# Python IDEs
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+
+# ============================================
+# Data Files (Scraped Data)
+# ============================================
+# Exclude scraped CSV files (they're generated)
+*.csv
+!requirements_scraper.txt
+!**/requirements*.txt
+
+# Data directories
+data/
+*.data
+*.db
+*.sqlite
+*.sqlite3
+
+# Next.js (if any remnants)
+app/
+components/
+contexts/
+lib/
+prisma/
+next-env.d.ts
+
+# Unused services
+services/
+k8s/
+
+# ============================================
+# Logs
+# ============================================
+*.log
+logs/
+*.log.*
+log/
+*.out
+*.err
+
+# Application logs
+scrape_output.log
+api-gateway.log
+auth-service.log
+order-service.log
+product-service.log
+quote-service.log
+*.pid
+
+# ============================================
+# Node.js / Frontend (if any)
+# ============================================
+node_modules/
+.next/
+package-lock.json
+package.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+.npm
+.eslintcache
+.node_repl_history
+*.tgz
+.yarn-integrity
+.next/
+out/
+.nuxt/
+dist/
+
+# ============================================
+# IDEs and Editors
+# ============================================
+# VSCode
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# IntelliJ IDEA / PyCharm
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+.vim/
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# ============================================
+# OS Files
+# ============================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.directory
+.Trash-*
+.nfs*
+
+# ============================================
+# Kubernetes / Helm
+# ============================================
+# Kubeconfig files (sensitive)
+kubeconfig
+*.kubeconfig
+.kube/
+kubeconfig.*
+~/.kube/config.local
+
+# Helm
+.helm/
+*.tgz
+charts/*.tgz
+
+# ============================================
+# Docker
+# ============================================
+# Docker build context (if any)
+.dockerignore
+
+# ============================================
+# Environment Variables
+# ============================================
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
+*.env
+secrets.yaml
+secrets.yml
+*.secret
+*.key
+*.pem
+*.crt
+
+# ============================================
+# Temporary Files
+# ============================================
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+*.orig
+*.save
+*.swp
+*.swo
+*~
+
+# ============================================
+# Build Artifacts
+# ============================================
+# Compiled files
+*.class
+*.dll
+*.exe
+*.o
+*.so
+*.dylib
+
+# Archives
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+*.zipx
+
+# ============================================
+# Testing
+# ============================================
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.hypothesis/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+test-results/
+junit.xml
+
+# ============================================
+# Documentation Build
+# ============================================
+docs/_build/
+site/
+.sphinx/
+
+# ============================================
+# CI/CD (keep workflow files, ignore artifacts)
+# ============================================
+# Keep .github/workflows/ but ignore artifacts
+.github/workflows/*.log
+.github/artifacts/
+
+# ============================================
+# Project Specific
+# ============================================
+# Scraper output
+scrape_output.log
+scrape_*.log
+
+# Service logs
+*-service.log
+*-service.pid
+
+# Cache directories
+.cache/
+cache/
+*.cache
+
+# Local development
+local/
+.local/
+dev/
+development/
+
+# ============================================
+# Keep Important Files
+# ============================================
+# Don't ignore these even if they match patterns above
+!requirements*.txt
+!package*.json
+!package*.lock
+!.github/workflows/*.yml
+!.github/workflows/*.yaml

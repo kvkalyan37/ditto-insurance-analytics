@@ -1,0 +1,184 @@
+name: Scheduled Data Update (Every 30 Minutes)
+
+on:
+  schedule:
+    # Run every 30 minutes
+    - cron: '*/30 * * * *'
+  workflow_dispatch: # Allow manual triggering
+
+env:
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+  DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+  FRONTEND_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/ditto-frontend
+  API_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/ditto-api
+
+jobs:
+  scrape-and-update:
+    name: Scrape Data and Update Deployment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          pip install -r requirements_scraper.txt
+
+      - name: Run scraper to fetch latest data
+        id: scrape
+        run: |
+          echo "🕷️ Starting data scrape from Ditto..."
+          python scrape_ditto.py --output ditto_insurance_data.csv
+          
+          # Check if data file was created and has content
+          if [ ! -f ditto_insurance_data.csv ]; then
+            echo "❌ Error: Data file not created"
+            exit 1
+          fi
+          
+          # Count records
+          RECORD_COUNT=$(tail -n +2 ditto_insurance_data.csv | wc -l | tr -d ' ')
+          echo "📊 Records scraped: $RECORD_COUNT"
+          echo "record_count=$RECORD_COUNT" >> $GITHUB_OUTPUT
+          
+          # Calculate file hash to detect changes
+          FILE_HASH=$(sha256sum ditto_insurance_data.csv | cut -d' ' -f1)
+          echo "file_hash=$FILE_HASH" >> $GITHUB_OUTPUT
+          echo "📝 Data file hash: $FILE_HASH"
+
+      - name: Check for data changes
+        id: check_changes
+        run: |
+          # Get previous hash from GitHub API or artifact
+          PREVIOUS_HASH=""
+          if [ -f .data_hash ]; then
+            PREVIOUS_HASH=$(cat .data_hash)
+          fi
+          
+          CURRENT_HASH="${{ steps.scrape.outputs.file_hash }}"
+          
+          if [ "$PREVIOUS_HASH" == "$CURRENT_HASH" ]; then
+            echo "ℹ️ No data changes detected. Skipping build and deployment."
+            echo "data_changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "✅ Data changed! New hash: $CURRENT_HASH"
+            echo "data_changed=true" >> $GITHUB_OUTPUT
+            echo "$CURRENT_HASH" > .data_hash
+          fi
+
+      - name: Set up Docker Buildx
+        if: steps.check_changes.outputs.data_changed == 'true'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        if: steps.check_changes.outputs.data_changed == 'true'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Generate timestamp tag
+        if: steps.check_changes.outputs.data_changed == 'true'
+        id: timestamp
+        run: |
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
+          echo "🕐 Generated timestamp: $TIMESTAMP"
+
+      - name: Copy data to API image context
+        if: steps.check_changes.outputs.data_changed == 'true'
+        run: |
+          # Copy CSV data to api_service directory for Docker build
+          mkdir -p api_service/data
+          cp ditto_insurance_data.csv api_service/data/
+          echo "✅ Data file copied to API build context"
+
+      - name: Build and push Frontend image with timestamp
+        if: steps.check_changes.outputs.data_changed == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.FRONTEND_IMAGE }}:latest
+            ${{ env.FRONTEND_IMAGE }}:${{ steps.timestamp.outputs.timestamp }}
+            ${{ env.FRONTEND_IMAGE }}:scheduled-${{ steps.timestamp.outputs.timestamp }}
+          cache-from: type=registry,ref=${{ env.FRONTEND_IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ env.FRONTEND_IMAGE }}:buildcache,mode=max
+
+      - name: Build and push API image with timestamp (includes new data)
+        if: steps.check_changes.outputs.data_changed == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./api_service
+          file: ./api_service/Dockerfile
+          push: true
+          tags: |
+            ${{ env.API_IMAGE }}:latest
+            ${{ env.API_IMAGE }}:${{ steps.timestamp.outputs.timestamp }}
+            ${{ env.API_IMAGE }}:scheduled-${{ steps.timestamp.outputs.timestamp }}
+          cache-from: type=registry,ref=${{ env.API_IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ env.API_IMAGE }}:buildcache,mode=max
+
+      - name: Set up kubectl
+        if: steps.check_changes.outputs.data_changed == 'true'
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Set up Helm
+        if: steps.check_changes.outputs.data_changed == 'true'
+        uses: azure/setup-helm@v3
+        with:
+          version: 'latest'
+
+      - name: Configure kubectl
+        if: steps.check_changes.outputs.data_changed == 'true'
+        run: |
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+          kubectl config view
+
+      - name: Deploy updated images with Helm
+        if: steps.check_changes.outputs.data_changed == 'true'
+        run: |
+          echo "🚀 Deploying updated images with timestamp: ${{ steps.timestamp.outputs.timestamp }}"
+          
+          # Deploy using Helm with new timestamped images
+          helm upgrade --install ditto-insurance ./helm/ditto-insurance \
+            --namespace ditto-insurance \
+            --create-namespace \
+            --set frontend.image.repository=${{ env.FRONTEND_IMAGE }} \
+            --set frontend.image.tag=${{ steps.timestamp.outputs.timestamp }} \
+            --set api.image.repository=${{ env.API_IMAGE }} \
+            --set api.image.tag=${{ steps.timestamp.outputs.timestamp }} \
+            --wait \
+            --timeout 5m
+          
+          echo "✅ Deployment complete with timestamp: ${{ steps.timestamp.outputs.timestamp }}"
+
+      - name: Verify deployment
+        if: steps.check_changes.outputs.data_changed == 'true'
+        run: |
+          kubectl rollout status deployment/ditto-insurance-frontend -n ditto-insurance --timeout=3m
+          kubectl rollout status deployment/ditto-insurance-api -n ditto-insurance --timeout=3m
+          echo "✅ All pods updated with new data!"
+
+      - name: Summary
+        run: |
+          if [ "${{ steps.check_changes.outputs.data_changed }}" == "true" ]; then
+            echo "## ✅ Data Update Complete" >> $GITHUB_STEP_SUMMARY
+            echo "- Records scraped: ${{ steps.scrape.outputs.record_count }}" >> $GITHUB_STEP_SUMMARY
+            echo "- New image tag: ${{ steps.timestamp.outputs.timestamp }}" >> $GITHUB_STEP_SUMMARY
+            echo "- Deployment: ✅ Updated" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## ℹ️ No Data Changes" >> $GITHUB_STEP_SUMMARY
+            echo "- Records: ${{ steps.scrape.outputs.record_count }}" >> $GITHUB_STEP_SUMMARY
+            echo "- Status: No changes detected, skipped build/deploy" >> $GITHUB_STEP_SUMMARY
+          fi
