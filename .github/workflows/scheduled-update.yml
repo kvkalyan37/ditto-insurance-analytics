@@ -107,8 +107,8 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: ${{ env.FRONTEND_IMAGE }}:${{ steps.timestamp.outputs.timestamp }}
-          cache-from: type=registry,ref=${{ env.FRONTEND_IMAGE }}:${{ steps.timestamp.outputs.timestamp }}
           cache-to: type=inline
+          no-cache-filters: true
 
       - name: Build and push API image with timestamp (includes new data)
         if: steps.check_changes.outputs.data_changed == 'true'
@@ -119,8 +119,8 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: ${{ env.API_IMAGE }}:${{ steps.timestamp.outputs.timestamp }}
-          cache-from: type=registry,ref=${{ env.API_IMAGE }}:${{ steps.timestamp.outputs.timestamp }}
           cache-to: type=inline
+          no-cache-filters: true
 
       - name: Set up kubectl
         if: steps.check_changes.outputs.data_changed == 'true'

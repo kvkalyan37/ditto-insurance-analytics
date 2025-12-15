@@ -55,8 +55,8 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: ${{ env.FRONTEND_IMAGE }}:${{ steps.timestamp.outputs.timestamp }}
-          cache-from: type=registry,ref=${{ env.FRONTEND_IMAGE }}:${{ steps.timestamp.outputs.timestamp }}
           cache-to: type=inline
+          no-cache-filters: true
 
       - name: Build and push API image
         uses: docker/build-push-action@v5
@@ -66,8 +66,8 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: ${{ env.API_IMAGE }}:${{ steps.timestamp.outputs.timestamp }}
-          cache-from: type=registry,ref=${{ env.API_IMAGE }}:${{ steps.timestamp.outputs.timestamp }}
           cache-to: type=inline
+          no-cache-filters: true
 
   deploy:
     name: Deploy to Kubernetes

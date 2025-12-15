@@ -42,8 +42,8 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: ${{ env.FRONTEND_IMAGE }}:${{ steps.timestamp.outputs.timestamp }}
-          cache-from: type=registry,ref=${{ env.FRONTEND_IMAGE }}:${{ steps.timestamp.outputs.timestamp }}
           cache-to: type=inline
+          no-cache-filters: true
 
   build-api:
     name: Build and Push API
@@ -76,6 +76,6 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: ${{ env.API_IMAGE }}:${{ steps.timestamp.outputs.timestamp }}
-          cache-from: type=registry,ref=${{ env.API_IMAGE }}:${{ steps.timestamp.outputs.timestamp }}
           cache-to: type=inline
+          no-cache-filters: true
 
