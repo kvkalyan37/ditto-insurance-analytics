@@ -51,16 +51,29 @@ jobs:
           echo "file_hash=$FILE_HASH" >> $GITHUB_OUTPUT
           echo "📝 Data file hash: $FILE_HASH"
 
+      - name: Get previous data hash
+        id: get_prev_hash
+        uses: actions/cache@v4
+        with:
+          path: .data_hash
+          key: ditto-data-hash-${{ github.ref }}
+          restore-keys: |
+            ditto-data-hash-
+
       - name: Check for data changes
         id: check_changes
         run: |
-          # Get previous hash from GitHub API or artifact
+          # Get previous hash from cache
           PREVIOUS_HASH=""
           if [ -f .data_hash ]; then
             PREVIOUS_HASH=$(cat .data_hash)
+            echo "📋 Previous data hash: $PREVIOUS_HASH"
+          else
+            echo "📋 No previous hash found (first run or cache miss)"
           fi
           
           CURRENT_HASH="${{ steps.scrape.outputs.file_hash }}"
+          echo "📋 Current data hash: $CURRENT_HASH"
           
           if [ "$PREVIOUS_HASH" == "$CURRENT_HASH" ]; then
             echo "ℹ️ No data changes detected. Skipping build and deployment."
@@ -68,8 +81,16 @@ jobs:
           else
             echo "✅ Data changed! New hash: $CURRENT_HASH"
             echo "data_changed=true" >> $GITHUB_OUTPUT
+            # Save current hash for next run
             echo "$CURRENT_HASH" > .data_hash
           fi
+
+      - name: Save data hash to cache
+        if: steps.check_changes.outputs.data_changed == 'true'
+        uses: actions/cache@v4
+        with:
+          path: .data_hash
+          key: ditto-data-hash-${{ github.ref }}-${{ steps.scrape.outputs.file_hash }}
 
       - name: Set up Docker Buildx
         if: steps.check_changes.outputs.data_changed == 'true'
@@ -122,59 +143,43 @@ jobs:
           cache-to: type=inline
           no-cache-filters: true
 
-      - name: Set up kubectl
+      - name: Upload data file as artifact
         if: steps.check_changes.outputs.data_changed == 'true'
-        uses: azure/setup-kubectl@v3
+        uses: actions/upload-artifact@v4
         with:
-          version: 'latest'
+          name: ditto-insurance-data
+          path: ditto_insurance_data.csv
+          retention-days: 7
+          if-no-files-found: error
 
-      - name: Set up Helm
-        if: steps.check_changes.outputs.data_changed == 'true'
-        uses: azure/setup-helm@v3
-        with:
-          version: 'latest'
-
-      - name: Configure kubectl
-        if: steps.check_changes.outputs.data_changed == 'true'
-        run: |
-          echo "${{ secrets.KUBECONFIG }}" | base64 -d > $HOME/.kube/config
-          chmod 600 $HOME/.kube/config
-          kubectl config view
-
-      - name: Deploy updated images with Helm
-        if: steps.check_changes.outputs.data_changed == 'true'
-        run: |
-          echo "🚀 Deploying updated images with timestamp: ${{ steps.timestamp.outputs.timestamp }}"
-          
-          # Deploy using Helm with new timestamped images
-          helm upgrade --install ditto-insurance ./helm/ditto-insurance \
-            --namespace ditto-insurance \
-            --create-namespace \
-            --set frontend.image.repository=${{ env.FRONTEND_IMAGE }} \
-            --set frontend.image.tag=${{ steps.timestamp.outputs.timestamp }} \
-            --set api.image.repository=${{ env.API_IMAGE }} \
-            --set api.image.tag=${{ steps.timestamp.outputs.timestamp }} \
-            --wait \
-            --timeout 5m
-          
-          echo "✅ Deployment complete with timestamp: ${{ steps.timestamp.outputs.timestamp }}"
-
-      - name: Verify deployment
-        if: steps.check_changes.outputs.data_changed == 'true'
-        run: |
-          kubectl rollout status deployment/ditto-insurance-frontend -n ditto-insurance --timeout=3m
-          kubectl rollout status deployment/ditto-insurance-api -n ditto-insurance --timeout=3m
-          echo "✅ All pods updated with new data!"
-
-      - name: Summary
+      - name: Final Summary
         run: |
           if [ "${{ steps.check_changes.outputs.data_changed }}" == "true" ]; then
-            echo "## ✅ Data Update Complete" >> $GITHUB_STEP_SUMMARY
-            echo "- Records scraped: ${{ steps.scrape.outputs.record_count }}" >> $GITHUB_STEP_SUMMARY
-            echo "- New image tag: ${{ steps.timestamp.outputs.timestamp }}" >> $GITHUB_STEP_SUMMARY
-            echo "- Deployment: ✅ Updated" >> $GITHUB_STEP_SUMMARY
+            echo "## ✅ Scheduled Update Complete" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 📊 Scraping Results" >> $GITHUB_STEP_SUMMARY
+            echo "- **Records scraped**: ${{ steps.scrape.outputs.record_count }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Data hash**: \`${{ steps.scrape.outputs.file_hash }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 🐳 Docker Images Built" >> $GITHUB_STEP_SUMMARY
+            echo "- **Frontend**: \`${{ env.FRONTEND_IMAGE }}:${{ steps.timestamp.outputs.timestamp }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **API**: \`${{ env.API_IMAGE }}:${{ steps.timestamp.outputs.timestamp }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 📥 Available on Docker Hub" >> $GITHUB_STEP_SUMMARY
+            echo "Images are now available on Docker Hub and ready to deploy!" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 🚀 Next Steps" >> $GITHUB_STEP_SUMMARY
+            echo "1. Pull the new images from Docker Hub" >> $GITHUB_STEP_SUMMARY
+            echo "2. Deploy to your hosting platform (Railway, Render, etc.)" >> $GITHUB_STEP_SUMMARY
+            echo "3. Or configure auto-deploy from Docker Hub" >> $GITHUB_STEP_SUMMARY
           else
-            echo "## ℹ️ No Data Changes" >> $GITHUB_STEP_SUMMARY
-            echo "- Records: ${{ steps.scrape.outputs.record_count }}" >> $GITHUB_STEP_SUMMARY
-            echo "- Status: No changes detected, skipped build/deploy" >> $GITHUB_STEP_SUMMARY
+            echo "## ℹ️ No Data Changes Detected" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 📊 Scraping Results" >> $GITHUB_STEP_SUMMARY
+            echo "- **Records scraped**: ${{ steps.scrape.outputs.record_count }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Data hash**: \`${{ steps.scrape.outputs.file_hash }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### ⏭️ Status" >> $GITHUB_STEP_SUMMARY
+            echo "No changes detected. Skipped image build and deployment." >> $GITHUB_STEP_SUMMARY
+            echo "Next check in 30 minutes." >> $GITHUB_STEP_SUMMARY
           fi
