@@ -34,18 +34,23 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Generate timestamp tag
+        id: timestamp
+        run: |
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
+          echo "🕐 Generated timestamp: $TIMESTAMP"
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.FRONTEND_IMAGE }}
           tags: |
+            type=raw,value=latest
+            type=raw,value=${{ steps.timestamp.outputs.timestamp }}
+            type=raw,value=${{ github.sha }}
             type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push
         uses: docker/build-push-action@v5
@@ -74,18 +79,23 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Generate timestamp tag
+        id: timestamp
+        run: |
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
+          echo "🕐 Generated timestamp: $TIMESTAMP"
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.API_IMAGE }}
           tags: |
+            type=raw,value=latest
+            type=raw,value=${{ steps.timestamp.outputs.timestamp }}
+            type=raw,value=${{ github.sha }}
             type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push
         uses: docker/build-push-action@v5

@@ -20,7 +20,6 @@ on:
 env:
   DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
   DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-  IMAGE_TAG: ${{ github.sha }}
   FRONTEND_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/ditto-frontend
   API_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/ditto-api
 
@@ -41,6 +40,13 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Generate timestamp tag
+        id: timestamp
+        run: |
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
+          echo "🕐 Generated timestamp: $TIMESTAMP"
+
       - name: Build and push Frontend image
         uses: docker/build-push-action@v5
         with:
@@ -49,7 +55,8 @@ jobs:
           push: true
           tags: |
             ${{ env.FRONTEND_IMAGE }}:latest
-            ${{ env.FRONTEND_IMAGE }}:${{ env.IMAGE_TAG }}
+            ${{ env.FRONTEND_IMAGE }}:${{ steps.timestamp.outputs.timestamp }}
+            ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
           cache-from: type=registry,ref=${{ env.FRONTEND_IMAGE }}:buildcache
           cache-to: type=registry,ref=${{ env.FRONTEND_IMAGE }}:buildcache,mode=max
 
@@ -61,7 +68,8 @@ jobs:
           push: true
           tags: |
             ${{ env.API_IMAGE }}:latest
-            ${{ env.API_IMAGE }}:${{ env.IMAGE_TAG }}
+            ${{ env.API_IMAGE }}:${{ steps.timestamp.outputs.timestamp }}
+            ${{ env.API_IMAGE }}:${{ github.sha }}
           cache-from: type=registry,ref=${{ env.API_IMAGE }}:buildcache
           cache-to: type=registry,ref=${{ env.API_IMAGE }}:buildcache,mode=max
 
@@ -92,16 +100,24 @@ jobs:
           chmod 600 $HOME/.kube/config
           kubectl config view
 
+      - name: Generate timestamp tag
+        id: timestamp
+        run: |
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
+          echo "🕐 Generated timestamp: $TIMESTAMP"
+
       - name: Deploy with Helm (Helm-only deployment)
         run: |
           # Deploy using Helm exclusively - no direct kubectl apply/manifest deployments
+          # Use timestamp tag generated above
           helm upgrade --install ditto-insurance ./helm/ditto-insurance \
             --namespace ditto-insurance \
             --create-namespace \
             --set frontend.image.repository=${{ env.FRONTEND_IMAGE }} \
-            --set frontend.image.tag=${{ env.IMAGE_TAG }} \
+            --set frontend.image.tag=${{ steps.timestamp.outputs.timestamp }} \
             --set api.image.repository=${{ env.API_IMAGE }} \
-            --set api.image.tag=${{ env.IMAGE_TAG }} \
+            --set api.image.tag=${{ steps.timestamp.outputs.timestamp }} \
             --wait \
             --timeout 5m
 
