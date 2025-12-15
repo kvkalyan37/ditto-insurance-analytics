@@ -99,7 +99,7 @@ git push -u origin main
 
 ```bash
 cd /Users/c27979e/Downloads/Cursor_Projects
-git remote -v
+c
 ```
 
 Should show your **personal** GitHub URL:
@@ -131,6 +131,8 @@ origin  https://github.com/YOUR_PERSONAL_USERNAME/ditto-insurance.git
 3. **Check Docker Hub**:
    - Go to: `https://hub.docker.com/r/YOUR_PERSONAL_USERNAME/ditto-frontend`
    - Images should appear after workflow completes
+
+ <KVK>  
 
 ---
 
