@@ -48,8 +48,8 @@ jobs:
           file: ./frontend/Dockerfile
           push: true
           tags: ${{ env.FRONTEND_IMAGE }}:${{ steps.timestamp.outputs.timestamp }}
-          cache-from: type=registry,ref=${{ env.FRONTEND_IMAGE }}:buildcache
-          cache-to: type=registry,ref=${{ env.FRONTEND_IMAGE }}:buildcache,mode=max
+          cache-from: type=registry,ref=${{ env.FRONTEND_IMAGE }}:${{ steps.timestamp.outputs.timestamp }}
+          cache-to: type=registry,ref=${{ env.FRONTEND_IMAGE }}:${{ steps.timestamp.outputs.timestamp }},mode=max
 
   build-api:
     name: Build and Push API
@@ -81,6 +81,6 @@ jobs:
           file: ./api_service/Dockerfile
           push: true
           tags: ${{ env.API_IMAGE }}:${{ steps.timestamp.outputs.timestamp }}
-          cache-from: type=registry,ref=${{ env.API_IMAGE }}:buildcache
-          cache-to: type=registry,ref=${{ env.API_IMAGE }}:buildcache,mode=max
+          cache-from: type=registry,ref=${{ env.API_IMAGE }}:${{ steps.timestamp.outputs.timestamp }}
+          cache-to: type=registry,ref=${{ env.API_IMAGE }}:${{ steps.timestamp.outputs.timestamp }},mode=max
 

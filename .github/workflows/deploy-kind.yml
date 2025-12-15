@@ -45,7 +45,7 @@ jobs:
           push: false
           tags: ditto-frontend:${{ steps.timestamp.outputs.timestamp }}
           load: true
-          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ditto-frontend:buildcache
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ditto-frontend:${{ steps.timestamp.outputs.timestamp }}
 
       - name: Build API image
         uses: docker/build-push-action@v5
@@ -55,7 +55,7 @@ jobs:
           push: false
           tags: ditto-api:${{ steps.timestamp.outputs.timestamp }}
           load: true
-          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ditto-api:buildcache
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ditto-api:${{ steps.timestamp.outputs.timestamp }}
 
       - name: Set up Kind
         uses: engineerd/setup-kind@v0.6.0
